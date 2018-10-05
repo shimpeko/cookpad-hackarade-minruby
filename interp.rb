@@ -115,6 +115,21 @@ def evaluate(exp, env)
       # ... Problem 4
       when "Integer"
         Integer(evaluate(exp[2], env))
+      when "fizzbuzz"
+        i = evaluate(exp[2], env)
+        if i % 3 == 0
+          if i % 5 == 0
+            "FizzBuzz"
+          else
+            "Fizz"
+          end
+        else
+          if i % 5 == 0
+            "Buzz"
+          else
+            i
+          end
+        end
       else
         raise("unknown builtin function")
       end
@@ -176,7 +191,6 @@ def evaluate(exp, env)
 
   else
     p("error")
-    pp(exp)
     raise("unknown node")
   end
 end
