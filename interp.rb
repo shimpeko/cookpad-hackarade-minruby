@@ -41,7 +41,7 @@ def evaluate(exp, env)
     # Advice 2: Apply `evaluate` to each child of this node.
     exp.shift
     exp.each {|e|
-      eval "#{e[1]}(#{evaluate(e[2], env)})"
+      evaluate(e, env)
     }
 
   # The second argument of this method, `env`, is an "environement" that
