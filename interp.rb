@@ -1,4 +1,4 @@
-require "minruby"
+require "./parser.rb"
 
 # An implementation of the evaluator
 def evaluate(exp, env)
@@ -66,7 +66,11 @@ def evaluate(exp, env)
     # Variable reference: lookup the value corresponded to the variable
     #
     # Advice: env[???]
-    env[exp[1]]
+    if exp[1] == 'block'
+      evaluate(env[exp[1]], env)
+    else
+      env[exp[1]]
+    end
 
   when "var_assign"
     # Variable assignment: store (or overwrite) the value to the environment
@@ -182,6 +186,7 @@ def evaluate(exp, env)
         params[func[0][i]] = vals[i]
         i = i + 1
       end
+      params['block'] = exp[3][0]
       params['function_definitions'] = env['function_definitions']
       evaluate(func[1], params)
     end
