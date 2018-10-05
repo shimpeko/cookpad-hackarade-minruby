@@ -49,8 +49,7 @@ def evaluate(exp, env)
     #
     # Advice 1: Insert `pp(exp)` and observe the AST first.
     # Advice 2: Apply `evaluate` to each child of this node.
-    exp.shift
-    exp.each {|e|
+    exp[1..-1].each {|e|
       evaluate(e, env)
     }
 
@@ -93,8 +92,9 @@ def evaluate(exp, env)
 
   when "while"
     # Loop.
-    raise(NotImplementedError) # Problem 3
-
+    while evaluate(exp[1], env)
+      evaluate(exp[2], env)
+    end
 
 #
 ## Problem 4: Function calls
