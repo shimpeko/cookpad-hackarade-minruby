@@ -49,9 +49,13 @@ def evaluate(exp, env)
     #
     # Advice 1: Insert `pp(exp)` and observe the AST first.
     # Advice 2: Apply `evaluate` to each child of this node.
-    exp[1..-1].each {|e|
-      evaluate(e, env)
-    }
+    i = 1
+    res = nil
+    while exp[i]
+      res = evaluate(exp[i], env)
+      i = i + 1
+    end
+    res
 
   # The second argument of this method, `env`, is an "environement" that
   # keeps track of the values stored to variables.
@@ -102,9 +106,9 @@ def evaluate(exp, env)
 
   when "func_call"
     # Lookup the function definition by the given function name.
-    func = $function_definitions[exp[1]]
+    func = env['function_definitions'][exp[1]]
 
-    if func.nil?
+    if func == nil
       # We couldn't find a user-defined function definition;
       # it should be a builtin function.
       # Dispatch upon the given function name, and do paticular tasks.
@@ -130,8 +134,16 @@ def evaluate(exp, env)
             i
           end
         end
+      when "require"
+        nil
+      when "minruby_parse"
+        minruby_parse(evaluate(exp[2], env))
+      when "minruby_load"
+        minruby_load()
+      when "pp"
+        pp(evaluate(exp[2], env))
       else
-        raise("unknown builtin function")
+        raise("unknown builtin function: #{exp[1]}")
       end
     else
 
@@ -157,8 +169,21 @@ def evaluate(exp, env)
       # (*1) formal parameter: a variable as found in the function definition.
       # For example, `a`, `b`, and `c` are the formal parameters of
       # `def foo(a, b, c)`.
-      params = exp[2..-1].map {|p| evaluate(p, env)}
-      evaluate(func[1], [func[0], params].transpose.to_h)
+      vals = []
+      i = 2
+      while exp[i]
+        vals[i-2] = evaluate(exp[i], env)
+        i = i + 1
+      end
+
+      params = {}
+      i = 0
+      while func[0][i]
+        params[func[0][i]] = vals[i]
+        i = i + 1
+      end
+      params['function_definitions'] = env['function_definitions']
+      evaluate(func[1], params)
     end
 
   when "func_def"
@@ -170,7 +195,7 @@ def evaluate(exp, env)
     # All you need is store them into $function_definitions.
     #
     # Advice: $function_definitions[???] = ???
-    $function_definitions[exp[1]] = [exp[2], exp[3]]
+    env['function_definitions'][exp[1]] = [exp[2], exp[3]]
 
 
 #
@@ -179,7 +204,13 @@ def evaluate(exp, env)
 
   # You don't need advices anymore, do you?
   when "ary_new"
-    exp[1..-1].each_with_index.map {|i, idx| [idx, evaluate(i, env)] }.to_h
+    n_ary = []
+    i = 1
+    while exp[i]
+      n_ary[i-1] = evaluate(exp[i], env)
+      i = i + 1
+    end
+    n_ary
 
   when "ary_ref"
     evaluate(exp[1], env)[evaluate(exp[2], env)]
@@ -188,17 +219,23 @@ def evaluate(exp, env)
     evaluate(exp[1], env)[evaluate(exp[2], env)] = evaluate(exp[3], env)
 
   when "hash_new"
-    Hash[*(exp[1..-1].map {|i| evaluate(i, env)})]
+    n_hash = {}
+    i = 1
+    while exp[i]
+      n_hash[evaluate(exp[i], env)] = evaluate(exp[i + 1], env)
+      i = i + 2
+    end
+    n_hash
 
   else
     p("error")
-    raise("unknown node")
+    raise("unknown node: #{exp[0]}")
   end
 end
 
 
-$function_definitions = {}
 env = {}
+env['function_definitions'] = {}
 
 # `minruby_load()` == `File.read(ARGV.shift)`
 # `minruby_parse(str)` parses a program text given, and returns its AST
